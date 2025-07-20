@@ -1,0 +1,14 @@
+[
+  {
+    "id": "",
+    "sender": "",
+    "recipient": "",
+    "subject": "",
+    "content": "",
+    "type": "SYSTEM_MESSAGE",
+    "timestamp": "2025-07-19 22:16:33",
+    "isRead": false,
+    "relatedRentalId": "",
+    "emailSent": false
+  }
+]

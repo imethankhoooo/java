@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2025-07-16T18:30:00.000Z" agent="5.0 (Windows)" etag="00000000" version="15.8.7" type="device">
+  <diagram id="W5pJ6fV9D0MbSZkIYVY_" name="Activity Diagram">
+    <mxGraphModel dx="1366" dy="768" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- 开始 -->
+        <mxCell id="2" value="开始" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="300" y="60" width="40" height="40" as="geometry"/>
+        </mxCell>
+        <!-- Supervisor navigates -->
+        <mxCell id="3" value="导航至学生档案并点击“安排会议”" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="140" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <!-- System displays form -->
+        <mxCell id="4" value="系统展示表单：标题、日期、时间、地点/方式" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="220" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Supervisor fills details -->
+        <mxCell id="5" value="监督员填写会议详情" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="300" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Decision: validation -->
+        <mxCell id="6" value="验证通过？" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="380" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <!-- A1: error path -->
+        <mxCell id="7" value="显示错误信息并停止" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCCC;" vertex="1" parent="1">
+          <mxGeometry x="40" y="460" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Create meeting record pending confirmation -->
+        <mxCell id="8" value="创建会议记录（待确认）并发送邀请" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="460" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Decision: student accept? -->
+        <mxCell id="9" value="学生接受？" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="540" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Accept path -->
+        <mxCell id="10" value="更新状态为已确认，发送通知并安排提醒" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="620" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Decline path -->
+        <mxCell id="11" value="学生拒绝，系统通知监督员" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;" vertex="1" parent="1">
+          <mxGeometry x="500" y="620" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <!-- End Success -->
+        <mxCell id="12" value="结束" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="300" y="720" width="40" height="40" as="geometry"/>
+        </mxCell>
+        <!-- End Decline/Error -->
+        <mxCell id="13" value="结束" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="580" y="720" width="40" height="40" as="geometry"/>
+        </mxCell>
+        <!-- Edges -->
+        <mxCell id="20" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="2" target="3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="21" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="3" target="4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="22" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="4" target="5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="23" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="5" target="6">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <!-- Decision split -->
+        <mxCell id="24" value="否" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="6" target="7">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="25" value="是" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="6" target="8">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <!-- Error to End -->
+        <mxCell id="26" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="7" target="13">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <!-- Continue -->
+        <mxCell id="27" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="8" target="9">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <!-- Decision student response -->
+        <mxCell id="28" value="是" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="9" target="10">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="29" value="否" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="9" target="11">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <!-- Endings -->
+        <mxCell id="30" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="10" target="12">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="31" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="11" target="13">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile> 
