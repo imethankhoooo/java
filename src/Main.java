@@ -1348,7 +1348,7 @@ public class Main {
             
             if (system.returnVehicleWithDamageCheck(rentalId, rental.getCustomer().getName(), damageDescriptions)) {
                 System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-                System.out.println("║                      RETURN SUMMARY                             ║");
+                System.out.println("║                      RETURN SUMMARY                              ║");
                 System.out.println("╚══════════════════════════════════════════════════════════════════╝");
                 System.out.println(" Vehicle return confirmed successfully.");
                 System.out.printf("Vehicle: %s %s\n", vehicle.getBrand(), vehicle.getModel());
@@ -1702,11 +1702,11 @@ public class Main {
     private static void reportsAndAnalytics(RentalSystem system, Scanner scanner) {
         while (true) {
             System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-            System.out.println("║                      REPORTS & ANALYTICS                        ║");
+            System.out.println("║                      REPORTS & ANALYTICS                         ║");
             System.out.println("╠══════════════════════════════════════════════════════════════════╣");
-            System.out.println("║ 1. View Statistics                                              ║");
-            System.out.println("║ 2. Generate Detailed Report                                     ║");
-            System.out.println("║ 0. Back to Main Menu                                            ║");
+            System.out.println("║ 1. View Statistics                                               ║");
+            System.out.println("║ 2. Generate Detailed Report                                      ║");
+            System.out.println("║ 0. Back to Main Menu                                             ║");
             System.out.println("╚══════════════════════════════════════════════════════════════════╝");
             System.out.print("Select option: ");
             
@@ -1729,13 +1729,13 @@ public class Main {
     // 生成详细报告
     private static void generateDetailedReport(RentalSystem system, Scanner scanner) {
         System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                    DETAILED REPORT OPTIONS                      ║");
+        System.out.println("║                    DETAILED REPORT OPTIONS                       ║");
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
-        System.out.println("║ 1. Monthly Rental Statistics                                    ║");
-        System.out.println("║ 2. Popular Vehicle Report                                       ║");
-        System.out.println("║ 3. Customer Activity Report                                     ║");
-        System.out.println("║ 4. Rental History Export                                        ║");
-        System.out.println("║ 0. Back to Reports Menu                                         ║");
+        System.out.println("║ 1. Monthly Rental Statistics                                     ║");
+        System.out.println("║ 2. Popular Vehicle Report                                        ║");
+        System.out.println("║ 3. Customer Activity Report                                      ║");
+        System.out.println("║ 4. Rental History Export                                         ║");
+        System.out.println("║ 0. Back to Reports Menu                                          ║");
         System.out.println("╚══════════════════════════════════════════════════════════════════╝");
         System.out.print("Select report type: ");
         
@@ -1765,7 +1765,7 @@ public class Main {
         List<Rental> rentals = system.getRentals();
         
         System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                      RENTAL HISTORY EXPORT                      ║");
+        System.out.println("║                      RENTAL HISTORY EXPORT                       ║");
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
         
         // Prepare data for export
@@ -2027,7 +2027,7 @@ public class Main {
         Map<String, Integer> stats = ticketService.getTicketStats();
 
         System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                        TICKET STATISTICS                        ║");
+        System.out.println("║                        TICKET STATISTICS                         ║");
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
         System.out.printf("║ Total Tickets: %-49d ║%n", stats.get("total"));
         System.out.printf("║ Valid Tickets: %-50d ║%n", stats.get("valid"));
@@ -2204,7 +2204,7 @@ public class Main {
                 System.out.println("║                                                                  ║");
             }
             
-            System.out.println("║ Are you sure you want to set this vehicle as AVAILABLE?         ║");
+            System.out.println("║ Are you sure you want to set this vehicle as AVAILABLE?          ║");
             System.out.println("╚══════════════════════════════════════════════════════════════════╝");
             System.out.print("Confirm (y/n): ");
             
@@ -2259,7 +2259,7 @@ public class Main {
     // 添加维护记录
     private static void addMaintenanceRecord(RentalSystem system, Scanner scanner, String reportedBy) {
         System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                     REPORT NEW ISSUE                            ║");
+        System.out.println("║                     REPORT NEW ISSUE                             ║");
         System.out.println("╚══════════════════════════════════════════════════════════════════╝");
         
         System.out.println("\nSelect vehicle category to report issue:");
@@ -2400,7 +2400,7 @@ public class Main {
     // 解决维护问题
     private static void resolveMaintenanceIssue(RentalSystem system, Scanner scanner, String resolvedBy) {
         System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                   FIX COMPLETED ISSUES                          ║");
+        System.out.println("║                   FIX COMPLETED ISSUES                           ║");
         System.out.println("╚══════════════════════════════════════════════════════════════════╝");
         
         List<MaintenanceLog> unresolvedLogs = system.getAllUnresolvedMaintenanceLogs();
@@ -2535,7 +2535,7 @@ public class Main {
     // 查看车辆维护历史
     private static void viewVehicleMaintenanceHistory(RentalSystem system, Scanner scanner) {
         System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                   VEHICLE MAINTENANCE HISTORY                   ║");
+        System.out.println("║                   VEHICLE MAINTENANCE HISTORY                    ║");
         System.out.println("╚══════════════════════════════════════════════════════════════════╝");
         
         // 显示所有车辆，不只是可用的
@@ -2584,7 +2584,7 @@ public class Main {
     // 管理车辆状态
     private static void manageVehicleStatus(RentalSystem system, Scanner scanner) {
         System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                    MANAGE VEHICLE STATUS                        ║");
+        System.out.println("║                    MANAGE VEHICLE STATUS                         ║");
         System.out.println("╚══════════════════════════════════════════════════════════════════╝");
         
         listAllVehicles(system.getVehicles());
@@ -2643,7 +2643,7 @@ public class Main {
      */
     private static void setVehicleToMaintenanceWithIssues(RentalSystem system, Vehicle vehicle, Scanner scanner) {
         System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                 SET VEHICLE TO MAINTENANCE MODE                 ║");
+        System.out.println("║                 SET VEHICLE TO MAINTENANCE MODE                  ║");
         System.out.println("╚══════════════════════════════════════════════════════════════════╝");
         
         System.out.printf("Vehicle: %s %s (ID: %d)\n", vehicle.getBrand(), vehicle.getModel(), vehicle.getId());
