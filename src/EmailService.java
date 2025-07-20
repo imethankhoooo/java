@@ -49,28 +49,41 @@ public class EmailService {
     }
     
     public boolean sendEmail(String recipientEmail, String subject, String content) {
+        return sendEmailWithAttachment(recipientEmail, subject, content, null, null);
+    }
+    
+    public boolean sendEmailWithAttachment(String recipientEmail, String subject, String content, byte[] attachmentData, String attachmentName) {
         try {
             if (useAuth && (senderEmail.equals("your-rental-system@gmail.com") || senderPassword.equals("your-app-password"))) {
                 // 如果还在使用默认配置，回退到控制台显示
                 System.out.println("=== SMTP NOT CONFIGURED ===");
                 System.out.println("Please update smtp_config.properties with your email settings");
                 fallbackToConsoleDisplay(recipientEmail, subject, content);
+                if (attachmentData != null) {
+                    System.out.println("Attachment: " + attachmentName + " (" + attachmentData.length + " bytes)");
+                }
                 return false;
             }
             
             // 尝试SMTP发送
-            boolean success = sendViaSMTP(recipientEmail, subject, content);
+            boolean success = sendViaSMTP(recipientEmail, subject, content, attachmentData, attachmentName);
             
             if (success) {
                 System.out.println("=== EMAIL SENT VIA SMTP ===");
                 System.out.println("To: " + recipientEmail);
                 System.out.println("Subject: " + subject);
+                if (attachmentData != null) {
+                    System.out.println("Attachment: " + attachmentName);
+                }
                 System.out.println("===========================");
                 System.out.println("Email sent successfully via SMTP to: " + recipientEmail);
                 return true;
             } else {
                 // SMTP失败，回退到控制台显示
                 fallbackToConsoleDisplay(recipientEmail, subject, content);
+                if (attachmentData != null) {
+                    System.out.println("Attachment: " + attachmentName + " (" + attachmentData.length + " bytes)");
+                }
                 return false;
             }
             
@@ -80,11 +93,14 @@ public class EmailService {
             
             // 如果SMTP失败，回退到控制台显示
             fallbackToConsoleDisplay(recipientEmail, subject, content);
+            if (attachmentData != null) {
+                System.out.println("Attachment: " + attachmentName + " (" + attachmentData.length + " bytes)");
+            }
             return false;
         }
     }
     
-    private boolean sendViaSMTP(String recipientEmail, String subject, String content) {
+    private boolean sendViaSMTP(String recipientEmail, String subject, String content, byte[] attachmentData, String attachmentName) {
         Socket socket = null;
         BufferedReader reader = null;
         PrintWriter writer = null;
@@ -193,9 +209,46 @@ public class EmailService {
             writer.println("To: " + recipientEmail);
             writer.println("Subject: " + subject);
             writer.println("Date: " + dateFormat.format(new Date()));
-            writer.println("Content-Type: text/plain; charset=UTF-8");
-            writer.println();
-            writer.println(content);
+            
+            if (attachmentData != null && attachmentName != null) {
+                // 发送带附件的MIME邮件
+                String boundary = "----=_NextPart_" + System.currentTimeMillis();
+                writer.println("MIME-Version: 1.0");
+                writer.println("Content-Type: multipart/mixed; boundary=\"" + boundary + "\"");
+                writer.println();
+                writer.println("This is a multi-part message in MIME format.");
+                writer.println();
+                
+                // 文本部分
+                writer.println("--" + boundary);
+                writer.println("Content-Type: text/plain; charset=UTF-8");
+                writer.println("Content-Transfer-Encoding: 8bit");
+                writer.println();
+                writer.println(content);
+                writer.println();
+                
+                // 附件部分
+                writer.println("--" + boundary);
+                writer.println("Content-Type: application/pdf; name=\"" + attachmentName + "\"");
+                writer.println("Content-Transfer-Encoding: base64");
+                writer.println("Content-Disposition: attachment; filename=\"" + attachmentName + "\"");
+                writer.println();
+                
+                // Base64编码附件
+                String encodedAttachment = Base64.getEncoder().encodeToString(attachmentData);
+                // 按每行76个字符分割base64数据
+                for (int i = 0; i < encodedAttachment.length(); i += 76) {
+                    int end = Math.min(i + 76, encodedAttachment.length());
+                    writer.println(encodedAttachment.substring(i, end));
+                }
+                writer.println();
+                writer.println("--" + boundary + "--");
+            } else {
+                // 发送纯文本邮件
+                writer.println("Content-Type: text/plain; charset=UTF-8");
+                writer.println();
+                writer.println(content);
+            }
             writer.println(".");
             
             response = reader.readLine();
@@ -316,6 +369,32 @@ public class EmailService {
         );
         
         return sendEmail(recipientEmail, subject, content);
+    }
+    
+    public boolean sendRentalApprovalWithPdfTicket(String recipientEmail, String username, String vehicleModel, String ticketId, byte[] pdfTicket) {
+        String subject = "Rental Approved - PDF Ticket Attached - " + vehicleModel;
+        String content = String.format(
+            "Dear %s,\n\n" +
+            " Excellent news! Your rental request for %s has been approved!\n\n" +
+            " CONFIRMATION SUMMARY:\n" +
+            "• Ticket ID: %s\n" +
+            "• Vehicle: %s\n" +
+            "• Status: APPROVED \n\n" +
+            " Your beautifully designed PDF ticket is attached to this email with all the detailed information, pickup instructions, and important notes.\n\n" +
+            " QUICK REMINDER:\n" +
+            "• Save the PDF ticket to your phone\n" +
+            "• All details are in the attached PDF\n" +
+            "• Contact us if you need assistance\n\n" +
+            "Thank you for choosing Premium Vehicle Rental!\n" +
+            "Your journey, our priority. \n\n" +
+            "Best regards,\n" +
+            "Premium Vehicle Rental Team\n" +
+            " support@premiumrental.com |  +1-800-RENTAL",
+            username, vehicleModel, ticketId, vehicleModel
+        );
+        
+        String pdfFilename = "rental_ticket_" + ticketId + ".pdf";
+        return sendEmailWithAttachment(recipientEmail, subject, content, pdfTicket, pdfFilename);
     }
     
     public boolean sendRentalRejection(String recipientEmail, String username, String vehicleModel, String reason) {

@@ -117,6 +117,35 @@ public class NotificationService {
         return true;
     }
     
+    // 发送租赁批准通知（带PDF票据）
+    public boolean sendRentalApprovalWithPdfTicket(String username, String vehicleModel, String rentalId, String ticketId, byte[] pdfTicket) {
+        String subject = "Rental Approved - PDF Ticket Attached - " + vehicleModel;
+        String content = String.format(
+            "Excellent news! Your rental request for %s has been approved!\n" +
+            "Your rental ticket has been generated: %s\n" +
+            "A beautiful PDF ticket has been sent to your email with all the details.\n" +
+            "IMPORTANT: Please save the PDF ticket. You will need it for vehicle pickup.\n" +
+            "Pickup Instructions:\n" +
+            "- Bring valid government-issued ID\n" +
+            "- Present your PDF ticket (digital or printed copy)\n" +
+            "- Arrive 15 minutes before rental start time\n" +
+            "- Vehicle inspection will be conducted before handover\n" +
+            "Check your email for the complete PDF ticket!",
+            vehicleModel, ticketId
+        );
+        
+        // 发送系统消息
+        messageService.sendRentalMessage("admin", username, subject, content, MessageType.RENTAL_APPROVAL, rentalId);
+        
+        // 发送带PDF附件的邮件
+        String email = getUserEmail(username);
+        if (email != null) {
+            return emailService.sendRentalApprovalWithPdfTicket(email, username, vehicleModel, ticketId, pdfTicket);
+        }
+        
+        return true;
+    }
+    
     // 发送租赁拒绝通知
     public boolean sendRentalRejection(String username, String vehicleModel, String reason, String rentalId) {
         String subject = "Rental Request Declined - " + vehicleModel;

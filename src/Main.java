@@ -328,16 +328,16 @@ public class Main {
                 statusDisplay = "MAINTENANCE";
             } else if (v.getStatus() == VehicleStatus.OUT_OF_SERVICE) {
                 statusDisplay = "OUT_SERVICE";
-                }
-                
+            }
+            
                 System.out.printf("│ %-3d │ %-11s │ %-11s │ %-11s │ %-11s │ %-11s │ RM%-9.2f │ %-11s │%n",
-                    v.getId(),
-                    v.getBrand().length() > 11 ? v.getBrand().substring(0, 11) : v.getBrand(),
-                    v.getModel().length() > 11 ? v.getModel().substring(0, 11) : v.getModel(),
+                v.getId(),
+                v.getBrand().length() > 11 ? v.getBrand().substring(0, 11) : v.getBrand(),
+                v.getModel().length() > 11 ? v.getModel().substring(0, 11) : v.getModel(),
                     v.getCarPlate().length() > 11 ? v.getCarPlate().substring(0, 11) : v.getCarPlate(),
-                    v.getVehicleType().toString().length() > 11 ? v.getVehicleType().toString().substring(0, 11) : v.getVehicleType().toString(),
-                    v.getFuelType().toString().length() > 11 ? v.getFuelType().toString().substring(0, 11) : v.getFuelType().toString(),
-                    v.getBasePrice(),
+                v.getVehicleType().toString().length() > 11 ? v.getVehicleType().toString().substring(0, 11) : v.getVehicleType().toString(),
+                v.getFuelType().toString().length() > 11 ? v.getFuelType().toString().substring(0, 11) : v.getFuelType().toString(),
+                v.getBasePrice(),
                 statusDisplay
                 );
         }
@@ -467,7 +467,7 @@ public class Main {
                     System.out.println("Invalid number format. Please enter a valid number of days.");
                     System.out.println("\nPress Enter to continue...");
                     scanner.nextLine();
-                    return;
+            return;
                 }
             } else {
                 System.out.println("You chose not to extend. Proceeding with new booking for this vehicle (if available).");
@@ -1371,7 +1371,7 @@ public class Main {
                         IssueReport issue = issueReports.get(i);
                         System.out.printf("  %d. %s (Severity: %d)\n", i+1, issue.description, issue.severity);
                     }
-                } else {
+            } else {
                     System.out.println("No issues reported - vehicle is ready for next rental.");
                 }
                 

@@ -6,7 +6,7 @@
     "carPlate": "ABC-123",
     "vehicleType": "CAR",
     "fuelType": "PETROL",
-    "status": "RESERVED",
+    "status": "AVAILABLE",
     "insuranceRate": 0.1,
     "basePrice": 50.0,
     "longTermDiscounts": {"7": 0.1, "14": 0.15, "30": 0.2}
@@ -18,7 +18,7 @@
     "carPlate": "XYZ-456",
     "vehicleType": "CAR",
     "fuelType": "HYBRID",
-    "status": "RESERVED",
+    "status": "AVAILABLE",
     "insuranceRate": 0.12,
     "basePrice": 45.0,
     "longTermDiscounts": {"7": 0.08, "14": 0.12}
@@ -54,7 +54,7 @@
     "carPlate": "VAN-555",
     "vehicleType": "VAN",
     "fuelType": "DIESEL",
-    "status": "RENTED",
+    "status": "AVAILABLE",
     "insuranceRate": 0.18,
     "basePrice": 75.0,
     "longTermDiscounts": {"5": 0.08, "10": 0.15}

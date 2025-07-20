@@ -403,7 +403,7 @@ public class RentalSystem {
 
             }
         } catch (Exception e) {
-            System.out.println("解析票据信息失败: " + e.getMessage());
+            System.out.println("Failure to parse ticket information: " + e.getMessage());
         }
     }
 
@@ -727,11 +727,28 @@ public class RentalSystem {
             // Generate ticket for approved rental
             Ticket ticket = ticketService.generateTicket(rental);
             
-            // Send rental approval notification with ticket information
-            notificationService.sendRentalApprovalWithTicket(rental.getUsername(), 
+            // Generate PDF ticket
+            PdfTicketService pdfTicketService = new PdfTicketService();
+            byte[] pdfTicket = pdfTicketService.generatePdfTicket(ticket);
+            
+            if (pdfTicket != null) {
+                // Send rental approval notification with PDF ticket
+                notificationService.sendRentalApprovalWithPdfTicket(rental.getUsername(), 
+                                                     rental.getVehicle().getModel(), 
+                                                               String.valueOf(rental.getId()),
+                                                               ticket.getTicketId(),
+                                                               pdfTicket);
+                
+                System.out.println(" PDF ticket generated and sent to customer email!");
+            } else {
+                // Fallback to regular ticket notification
+                notificationService.sendRentalApprovalWithTicket(rental.getUsername(), 
                                                  rental.getVehicle().getModel(), 
-                                                           String.valueOf(rental.getId()),
-                                                           ticket.getTicketId());
+                                                               String.valueOf(rental.getId()),
+                                                               ticket.getTicketId());
+                
+                System.out.println(" PDF generation failed, sent regular ticket notification");
+            }
             
             // Display ticket information to admin
             System.out.println("\n=== Ticket Generated ===");

@@ -78,10 +78,10 @@ public class Ticket {
         System.out.printf("║ Contact: %-54s  ║%n", customerContact);
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
         System.out.printf("║ Vehicle: %-55s ║%n", vehicleInfo);
-        System.out.printf("║ Car Plate: %-47s ║%n", carPlate);
+        System.out.printf("║ Car Plate: %-53s ║%n", carPlate);
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
         System.out.printf("║ Rental Period: %-49s ║%n", startDate + " to " + endDate);
-        System.out.printf("║ Total Fee: RM%-52.2f ║%n", totalFee);
+        System.out.printf("║ Total Fee: RM%-51.2f ║%n", totalFee);
         System.out.printf("║ Insurance: %-53s ║%n", insuranceIncluded ? "Included" : "Not included");
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
         System.out.printf("║ Pickup Location: %-47s ║%n", pickupLocation);
