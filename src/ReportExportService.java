@@ -347,7 +347,7 @@ public class ReportExportService {
         if (str == null || str.trim().isEmpty()) return false;
         
         // 移除货币符号和空格
-        String cleaned = str.replace("$", "").replace(",", "").trim();
+        String cleaned = str.replace("RM", "").replace(",", "").trim();
         
         try {
             Double.parseDouble(cleaned);

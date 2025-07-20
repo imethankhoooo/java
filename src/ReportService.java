@@ -79,7 +79,7 @@ public class ReportService {
             int count = entry.getValue();
             double revenue = customerRevenue.getOrDefault(customer, 0.0);
             System.out.println("Customer: " + customer + ", Rentals: " + count + 
-                             ", Total Spent: $" + String.format("%.2f", revenue));
+                             ", Total Spent: RM" + String.format("%.2f", revenue));
         }
     }
     
@@ -130,7 +130,7 @@ public class ReportService {
         System.out.println("Completed Rentals: " + completedRentals);
         System.out.println("Pending Rentals: " + pendingRentals);
         System.out.println("Cancelled Rentals: " + cancelledRentals);
-        System.out.println("Total Revenue: $" + String.format("%.2f", totalRevenue));
+        System.out.println("Total Revenue: RM" + String.format("%.2f", totalRevenue));
         System.out.println("Insurance Purchases: " + insurancePurchases + " (" + 
                          String.format("%.1f", (double)insurancePurchases/totalRentals*100) + "%)");
         System.out.println();
@@ -146,7 +146,6 @@ public class ReportService {
                     availableVehicles++;
                     break;
                 case RESERVED:
-                    // 预留状态也算作不可用
                     rentedVehicles++;
                     break;
                 case RENTED:
@@ -186,7 +185,7 @@ public class ReportService {
         
         if (completedRentals > 0) {
             double avgRevenue = totalRevenue / completedRentals;
-            System.out.println("Average Revenue per Rental: $" + String.format("%.2f", avgRevenue));
+            System.out.println("Average Revenue per Rental: RM" + String.format("%.2f", avgRevenue));
         }
     }
 } 

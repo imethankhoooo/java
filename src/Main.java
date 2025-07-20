@@ -1,13 +1,10 @@
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 
 
 /**
@@ -46,6 +43,10 @@ public class Main {
         system.loadVehicles("vehicles.json");
         system.loadRentals("rentals.json");
         system.loadMaintenanceLogs("maintenance_logs.json");
+        
+        // 同步车辆状态与租赁状态，确保一致性
+        system.syncVehicleStatusWithRentals();
+        system.saveVehicles("vehicles.json");
         
         Scanner scanner = new Scanner(System.in);
         System.out.println("Welcome to Vehicle Rental Service System");
@@ -269,7 +270,7 @@ public class Main {
         
         return vehicle.getBrand().toUpperCase().contains(term) ||
                vehicle.getModel().toUpperCase().contains(term) ||
-               vehicle.getLicensePlate().toUpperCase().contains(term) ||
+               vehicle.getCarPlate().toUpperCase().contains(term) ||
                vehicle.getVehicleType().toString().toUpperCase().contains(term) ||
                vehicle.getFuelType().toString().toUpperCase().contains(term);
     }
@@ -281,20 +282,20 @@ public class Main {
     // Display all vehicles (for maintenance history)
     private static void listAllVehicles(List<Vehicle> vehicles) {
         System.out.println("\n┌─────┬─────────────┬─────────────┬─────────────┬─────────────┬─────────────┐");
-        System.out.println("│ ID  │    Brand    │    Model    │   License   │    Type     │   Status    │");
+        System.out.println("│ ID  │    Brand    │    Model    │  Car Plate  │    Type     │   Status    │");
         System.out.println("├─────┼─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤");
         
         for (Vehicle v : vehicles) {
             String brand = v.getBrand().length() > 11 ? v.getBrand().substring(0, 8) + "..." : v.getBrand();
             String model = v.getModel().length() > 11 ? v.getModel().substring(0, 8) + "..." : v.getModel();
-            String license = v.getLicensePlate().length() > 11 ? v.getLicensePlate().substring(0, 8) + "..." : v.getLicensePlate();
+            String carPlate = v.getCarPlate().length() > 11 ? v.getCarPlate().substring(0, 8) + "..." : v.getCarPlate();
             String type = v.getVehicleType().toString().length() > 11 ? v.getVehicleType().toString().substring(0, 8) + "..." : v.getVehicleType().toString();
             String status = v.getStatus().toString();
             if (status.equals("UNDER_MAINTENANCE")) status = "MAINTENANCE";
             else if (status.length() > 11) status = status.substring(0, 8) + "...";
             
             System.out.printf("│ %-3d │ %-11s │ %-11s │ %-11s │ %-11s │ %-11s │%n",
-                v.getId(), brand, model, license, type, status
+                v.getId(), brand, model, carPlate, type, status
             );
         }
         
@@ -312,7 +313,7 @@ public class Main {
         }
         
         System.out.println("┌─────┬─────────────┬─────────────┬─────────────┬─────────────┬─────────────┬─────────────┬─────────────┐");
-        System.out.println("│ ID  │ Brand       │ Model       │ License     │ Type        │ Fuel        │ Price/Day   │ Status      │");
+        System.out.println("│ ID  │ Brand       │ Model       │ Car Plate   │ Type        │ Fuel        │ Price/Day   │ Status      │");
         System.out.println("├─────┼─────────────┼─────────────┼─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤");
         
         for (Vehicle v : vehicles) {
@@ -329,11 +330,11 @@ public class Main {
                 statusDisplay = "OUT_SERVICE";
                 }
                 
-                System.out.printf("│ %-3d │ %-11s │ %-11s │ %-11s │ %-11s │ %-11s │ $%-10.2f │ %-11s │%n",
+                System.out.printf("│ %-3d │ %-11s │ %-11s │ %-11s │ %-11s │ %-11s │ RM%-9.2f │ %-11s │%n",
                     v.getId(),
                     v.getBrand().length() > 11 ? v.getBrand().substring(0, 11) : v.getBrand(),
                     v.getModel().length() > 11 ? v.getModel().substring(0, 11) : v.getModel(),
-                    v.getLicensePlate().length() > 11 ? v.getLicensePlate().substring(0, 11) : v.getLicensePlate(),
+                    v.getCarPlate().length() > 11 ? v.getCarPlate().substring(0, 11) : v.getCarPlate(),
                     v.getVehicleType().toString().length() > 11 ? v.getVehicleType().toString().substring(0, 11) : v.getVehicleType().toString(),
                     v.getFuelType().toString().length() > 11 ? v.getFuelType().toString().substring(0, 11) : v.getFuelType().toString(),
                     v.getBasePrice(),
@@ -341,8 +342,7 @@ public class Main {
                 );
         }
         System.out.println("└─────┴─────────────┴─────────────┴─────────────┴─────────────┴─────────────┴─────────────┴─────────────┘");
-        System.out.println("\nNote: You can only book AVAILABLE vehicles. Other vehicles show current status.");
-        System.out.println("      Enter vehicle ID to see detailed availability and booking periods.");
+        System.out.println("\nNote: Enter vehicle ID to see detailed availability and view unavailable period for reserved vehicle");
     }
 
     // Initiate rental process
@@ -384,14 +384,14 @@ public class Main {
             System.out.println("Vehicle not found.");
             return;
         }
-
+        
         // Show vehicle details regardless of status
         System.out.println("\n=== Vehicle Details ===\n");
         System.out.println("Vehicle: " + selected.getBrand() + " " + selected.getModel());
-        System.out.println("License Plate: " + selected.getLicensePlate());
+        System.out.println("Car Plate: " + selected.getCarPlate());
         System.out.println("Type: " + selected.getVehicleType());
         System.out.println("Fuel Type: " + selected.getFuelType());
-        System.out.printf("Base Price: $%.2f/day\n", selected.getBasePrice());
+        System.out.printf("Base Price: RM%.2f/day\n", selected.getBasePrice());
         System.out.println("Current Status: " + selected.getStatus());
 
         // Check for existing active rental by the same user for this vehicle
@@ -402,7 +402,7 @@ public class Main {
             System.out.printf("You already have an active rental for this vehicle:\n");
             System.out.printf("  Current rental period: %s to %s\n",
                               existingRental.getStartDate(), existingRental.getEndDate());
-            System.out.printf("  Total fee: $%.2f\n", existingRental.getTotalFee());
+            System.out.printf("  Total fee: RM%.2f\n", existingRental.getTotalFee());
 
             System.out.print("\nDo you want to extend this existing rental instead? (y/n): ");
             String extendChoice = scanner.nextLine();
@@ -446,7 +446,7 @@ public class Main {
                         System.out.println("\n=== RENTAL EXTENSION SUCCESSFUL ===\n");
                         System.out.printf("Updated Rental ID: %d\n", updatedRental.getId());
                         System.out.printf("Extended until: %s\n", updatedRental.getEndDate());
-                        System.out.printf("Updated total fee: $%.2f\n", updatedRental.getTotalFee());
+                        System.out.printf("Updated total fee: RM%.2f\n", updatedRental.getTotalFee());
                         System.out.println("New ticket generated.");
 
                         // Display new ticket
@@ -484,13 +484,13 @@ public class Main {
             }
 
             // Still show booking schedule for informational purposes
-            List<String> unavailablePeriods = system.getVehicleUnavailablePeriods(vehicleId);
-            if (!unavailablePeriods.isEmpty()) {
+        List<String> unavailablePeriods = system.getVehicleUnavailablePeriods(vehicleId);
+        if (!unavailablePeriods.isEmpty()) {
                 System.out.println("\n=== Current Booking Schedule ===\n");
-                for (String period : unavailablePeriods) {
-                    System.out.println("- " + period);
-                }
-            } else {
+            for (String period : unavailablePeriods) {
+                System.out.println("- " + period);
+            }
+        } else {
                 System.out.println("\nNo current bookings found for this vehicle.");
             }
 
@@ -518,22 +518,32 @@ public class Main {
             System.out.println("Returning to main menu...");
             return;
         }
-
+        
         LocalDate startDate;
-        if (startStr.equalsIgnoreCase("today")) {
-            startDate = LocalDate.now();
-        } else {
+            if (startStr.equalsIgnoreCase("today")) {
+                startDate = LocalDate.now();
+            } else {
             try {
                 startDate = LocalDate.parse(startStr);
             } catch (Exception e) {
                 System.out.println("Invalid date format. Please use yyyy-MM-dd.");
                 System.out.println("\nPress Enter to continue...");
                 scanner.nextLine();
-                return;
+            return;
             }
         }
 
-        System.out.print("Enter number of rental days (or 'exit' to return): ");
+        // Show available discounts before asking for rental days
+        if (selected.getLongTermDiscounts() != null && !selected.getLongTermDiscounts().isEmpty()) {
+            System.out.println("\n=== Available Discounts ===\n");
+            System.out.println("Long-term rental discounts:");
+            for (Map.Entry<Integer, Double> entry : selected.getLongTermDiscounts().entrySet()) {
+                System.out.printf("- %d+ days: %.1f%% off\n", entry.getKey(), entry.getValue() * 100);
+            }
+            System.out.println("\nChoose your rental duration to see applicable discounts!");
+        }
+        
+        System.out.print("\nEnter number of rental days (or 'exit' to return): ");
         String daysStr = scanner.nextLine();
 
         if (daysStr.equalsIgnoreCase("exit")) {
@@ -556,9 +566,9 @@ public class Main {
             scanner.nextLine();
             return;
         }
-
+        
         LocalDate endDate = startDate.plusDays(rentalDays - 1);
-
+        
         // Check for conflicts
         String conflictDetails = system.getConflictDetails(vehicleId, startDate, endDate);
         if (conflictDetails != null) {
@@ -572,37 +582,36 @@ public class Main {
             scanner.nextLine();
             return;
         }
-
-        // Show applicable discount
+        
+        // Show applied discount
         double discount = selected.getDiscountForDays(rentalDays);
         double baseRentalCost = selected.getBasePrice() * rentalDays;
         if (discount > 0) {
-            System.out.println("\n=== Available Discounts ===\n");
-            System.out.println("Long-term rental discounts:");
-            for (Map.Entry<Integer, Double> entry : selected.getLongTermDiscounts().entrySet()) {
-                System.out.printf("- %d+ days: %.1f%% off\n", entry.getKey(), entry.getValue() * 100);
-            }
+            System.out.println("\n=== Discount Applied ===\n");
             System.out.printf("[DISCOUNT] Long-term discount applied: %.1f%% off\n", discount * 100);
             double discountedPrice = baseRentalCost * (1 - discount);
-            System.out.printf("Estimated price after discount: $%.2f (was $%.2f)\n", discountedPrice, baseRentalCost);
+            System.out.printf("Estimated price after discount: RM%.2f (was RM%.2f)\n", discountedPrice, baseRentalCost);
+        } else {
+            System.out.println("\n=== Pricing ===\n");
+            System.out.printf("Base rental cost: RM%.2f\n", baseRentalCost);
         }
-
+        
         // Calculate base rental cost for insurance display
         double insuranceRate = selected.getInsuranceRate();
         double insuranceCost = baseRentalCost * insuranceRate;
-
+        
         System.out.printf("\n=== Insurance Information ===\n");
         System.out.printf("Insurance rate: %.1f%%\n", insuranceRate * 100);
-        System.out.printf("Estimated insurance cost: $%.2f\n", insuranceCost);
+        System.out.printf("Estimated insurance cost: RM%.2f\n", insuranceCost);
         System.out.print("Purchase insurance? (y/n): ");
         String ins = scanner.nextLine();
         boolean insurance = ins.equalsIgnoreCase("y");
-
+        
         // Get customer details with profile confirmation
         System.out.println("\n=== Customer Information ===\n");
         String customerName = account.getFullName();
         String contact = account.getContactNumber();
-
+        
         if (customerName.isEmpty() || contact.isEmpty()) {
             System.out.println("Please complete your profile information:");
             if (customerName.isEmpty()) {
@@ -621,7 +630,7 @@ public class Main {
             System.out.println("Contact: " + contact);
             System.out.print("Is this information correct? (y/n): ");
             String confirm = scanner.nextLine();
-
+            
             if (!confirm.equalsIgnoreCase("y")) {
                 System.out.print("Enter full name for this booking: ");
                 customerName = scanner.nextLine();
@@ -630,9 +639,9 @@ public class Main {
                 System.out.println("Note: This will not update your profile permanently.");
             }
         }
-
+        
         Customer customer = system.findOrCreateCustomer(customerName, contact);
-
+        
         // Final confirmation and booking
         double totalFee = system.calculateRentalFee(selected, startDate, endDate, insurance);
         System.out.println("\n=== Rental Summary ===\n");
@@ -641,8 +650,8 @@ public class Main {
         System.out.println("Start Date: " + startDate);
         System.out.println("End Date: " + endDate);
         System.out.println("Insurance: " + (insurance ? "Included" : "Not included"));
-        System.out.printf("Total Fee: $%.2f\n", totalFee);
-
+        System.out.printf("Total Fee: RM%.2f\n", totalFee);
+        
         System.out.print("\nConfirm booking? (y/n): ");
         if (scanner.nextLine().equalsIgnoreCase("y")) {
             try {
@@ -656,31 +665,6 @@ public class Main {
             }
         } else {
             System.out.println("Booking cancelled.");
-        }
-    }
-
-    // View my rentals
-    private static void viewMyRentals(RentalSystem system, String username) {
-        System.out.println("\n=== My Active Rentals ===");
-        List<Rental> myRentals = system.getRentalsByUsername(username);
-        List<Rental> activeRentals = new ArrayList<>();
-        
-        // Filter only PENDING and ACTIVE rentals
-        for (Rental r : myRentals) {
-            if (r.getStatus() == RentalStatus.PENDING || r.getStatus() == RentalStatus.ACTIVE) {
-                activeRentals.add(r);
-            }
-        }
-        
-        if (activeRentals.isEmpty()) {
-            System.out.println("No active rentals found.");
-        } else {
-            for (Rental r : activeRentals) {
-                System.out.println("ID: " + r.getId() + ", Vehicle: " + r.getVehicle().getBrand() + 
-                                 " " + r.getVehicle().getModel() + ", Dates: " + r.getStartDate() + 
-                                 " to " + r.getEndDate() + ", Status: " + r.getStatus() + 
-                                 ", Estimated Price: $" + String.format("%.2f", r.getTotalFee()));
-            }
         }
     }
 
@@ -702,13 +686,13 @@ public class Main {
         List<Rental> returnedRentals = new ArrayList<>();
         List<Rental> cancelledRentals = new ArrayList<>();
         
-            for (Rental r : myRentals) {
+        for (Rental r : myRentals) {
             switch (r.getStatus()) {
                 case PENDING:
                     pendingRentals.add(r);
                     break;
                 case ACTIVE:
-                    activeRentals.add(r);
+                activeRentals.add(r);
                     break;
                 case RETURNED:
                     returnedRentals.add(r);
@@ -726,7 +710,7 @@ public class Main {
             for (Rental r : pendingRentals) {
                 System.out.println("ID: " + r.getId() + " | Vehicle: " + r.getVehicle().getBrand() + 
                                  " " + r.getVehicle().getModel() + " | Period: " + r.getStartDate() + 
-                                 " to " + r.getEndDate() + " | Est. Fee: $" + String.format("%.2f", r.getTotalFee()));
+                                 " to " + r.getEndDate() + " | Est. Fee: RM" + String.format("%.2f", r.getTotalFee()));
             }
         }
         
@@ -737,7 +721,7 @@ public class Main {
             for (Rental r : activeRentals) {
                 System.out.println("ID: " + r.getId() + " | Vehicle: " + r.getVehicle().getBrand() + 
                                  " " + r.getVehicle().getModel() + " | Period: " + r.getStartDate() + 
-                                 " to " + r.getEndDate() + " | Est. Fee: $" + String.format("%.2f", r.getTotalFee()));
+                                 " to " + r.getEndDate() + " | Est. Fee: RM" + String.format("%.2f", r.getTotalFee()));
             }
         }
         
@@ -747,8 +731,8 @@ public class Main {
             System.out.println("================================================================");
             for (Rental r : returnedRentals) {
                 String feeDisplay = r.getActualFee() > 0 ? 
-                    "Final Fee: $" + String.format("%.2f", r.getActualFee()) : 
-                    "Est. Fee: $" + String.format("%.2f", r.getTotalFee());
+                    "Final Fee: RM" + String.format("%.2f", r.getActualFee()) : 
+                    "Est. Fee: RM" + String.format("%.2f", r.getTotalFee());
                 System.out.println("ID: " + r.getId() + " | Vehicle: " + r.getVehicle().getBrand() + 
                                  " " + r.getVehicle().getModel() + " | Period: " + r.getStartDate() + 
                                  " to " + r.getEndDate() + " | " + feeDisplay);
@@ -772,10 +756,6 @@ public class Main {
                          " | Cancelled: " + cancelledRentals.size());
     }
 
-    // View my rental history (original version - kept for compatibility)
-    private static void viewMyRentalHistory(RentalSystem system, String username) {
-        viewMyRentalHistoryEnhanced(system, username);
-    }
 
     // View my rental tickets
     private static void viewMyTickets(RentalSystem system, Scanner scanner, String username) {
@@ -829,6 +809,8 @@ public class Main {
         } catch (NumberFormatException e) {
             System.out.println("Invalid input.");
         }
+        System.out.println("\nPress Enter to continue...");
+        scanner.nextLine();
     }
 
     // Cancel booking
@@ -872,7 +854,7 @@ public class Main {
     // Request vehicle return
     private static void requestReturn(RentalSystem system, Scanner scanner, String username) {
         System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                     REQUEST VEHICLE RETURN                      ║");
+        System.out.println("║                     REQUEST VEHICLE RETURN                       ║");
         System.out.println("╚══════════════════════════════════════════════════════════════════╝");
         
         List<Rental> myRentals = system.getRentalsByUsername(username);
@@ -891,7 +873,7 @@ public class Main {
         
         System.out.println("\nActive rentals:");
         System.out.println("┌─────┬──────────────────┬─────────────┬─────────────┐");
-        System.out.println("│ ID  │     Vehicle      │ License     │  End Date   │");
+        System.out.println("│ ID  │     Vehicle      │ Car Plate   │  End Date   │");
         System.out.println("├─────┼──────────────────┼─────────────┼─────────────┤");
         for (Rental r : activeRentals) {
             String vehicleName = String.format("%s %s", r.getVehicle().getBrand(), r.getVehicle().getModel());
@@ -899,7 +881,7 @@ public class Main {
                 vehicleName = vehicleName.substring(0, 13) + "...";
             }
             System.out.printf("│ %-3d │ %-16s │ %-11s │ %-11s │\n",
-                             r.getId(), vehicleName, r.getVehicle().getLicensePlate(), r.getEndDate());
+                             r.getId(), vehicleName, r.getVehicle().getCarPlate(), r.getEndDate());
         }
         System.out.println("└─────┴──────────────────┴─────────────┴─────────────┘");
         
@@ -914,14 +896,30 @@ public class Main {
                 return;
             }
             
+            // Check if vehicle has been picked up (ticket used)
+            TicketService ticketService = system.getTicketService();
+            Ticket ticket = ticketService.getTicketByRentalId(rentalId);
+            
+            if (ticket == null || !ticket.isUsed()) {
+                System.out.println("\n ERROR: Vehicle has not been picked up yet!");
+                System.out.println("You must pick up the vehicle before you can return it.");
+                if (ticket != null) {
+                    System.out.println("Please use your ticket: " + ticket.getTicketId());
+                    System.out.println("Go to admin to validate your ticket for pickup first.");
+                }
+                System.out.println("\nPress Enter to continue...");
+                scanner.nextLine();
+                return;
+            }
+            
             // 增强的车辆状况报告流程
             System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-            System.out.println("║                   VEHICLE CONDITION REPORT                      ║");
+            System.out.println("║                   VEHICLE CONDITION REPORT                       ║");
             System.out.println("╚══════════════════════════════════════════════════════════════════╝");
             
             Vehicle vehicle = rental.getVehicle();
-            System.out.printf("Vehicle: %s %s (License: %s)\n", 
-                             vehicle.getBrand(), vehicle.getModel(), vehicle.getLicensePlate());
+            System.out.printf("Vehicle: %s %s (Car Plate: %s)\n", 
+                             vehicle.getBrand(), vehicle.getModel(), vehicle.getCarPlate());
             
             System.out.println("\nPlease report any issues or damage with the vehicle:");
             System.out.print("Any issues to report? (y/n): ");
@@ -995,7 +993,7 @@ public class Main {
                 System.out.println("╚══════════════════════════════════════════════════════════════════╝");
                 System.out.println(" Vehicle returned successfully.");
                 System.out.printf("Vehicle: %s %s\n", vehicle.getBrand(), vehicle.getModel());
-                System.out.printf("Final Fee: $%.2f\n", rental.getActualFee());
+                System.out.printf("Final Fee: RM%.2f\n", rental.getActualFee());
                 
                 if (!issueReports.isEmpty()) {
                     System.out.printf("Issues reported: %d\n", issueReports.size());
@@ -1024,9 +1022,7 @@ public class Main {
         } catch (NumberFormatException e) {
             System.out.println("Invalid rental ID format.");
         }
-        
-        System.out.println("\nPress Enter to continue...");
-        scanner.nextLine();
+
     }
 
     /**
@@ -1053,7 +1049,7 @@ public class Main {
         }
         
         System.out.println("┌─────┬─────────────┬─────────────┬─────────────┬─────────────┬─────────────┬─────────────┬─────────────┬─────────────────────────┐");
-        System.out.println("│ ID  │ Brand       │ Model       │ License     │ Type        │ Fuel        │ Status      │ Price/Day   │ Discounts               │");
+        System.out.println("│ ID  │ Brand       │ Model       │ Car Plate   │ Type        │ Fuel        │ Status      │ Price/Day   │ Discounts               │");
         System.out.println("├─────┼─────────────┼─────────────┼─────────────┼─────────────┼─────────────┼─────────────┼─────────────┼─────────────────────────┤");
         
         for (Vehicle v : vehicles) {
@@ -1086,11 +1082,11 @@ public class Main {
                 statusDisplay = "OUT_SERVICE";
             }
             
-            System.out.printf("│ %-3d │ %-11s │ %-11s │ %-11s │ %-11s │ %-11s │ %-11s │ $%-10.2f │ %-23s │%n",
+            System.out.printf("│ %-3d │ %-11s │ %-11s │ %-11s │ %-11s │ %-11s │ %-11s │ RM%-9.2f │ %-23s │%n",
                 v.getId(),
                 v.getBrand().length() > 11 ? v.getBrand().substring(0, 11) : v.getBrand(),
                 v.getModel().length() > 11 ? v.getModel().substring(0, 11) : v.getModel(),
-                v.getLicensePlate().length() > 11 ? v.getLicensePlate().substring(0, 11) : v.getLicensePlate(),
+                v.getCarPlate().length() > 11 ? v.getCarPlate().substring(0, 11) : v.getCarPlate(),
                 v.getVehicleType().toString().length() > 11 ? v.getVehicleType().toString().substring(0, 11) : v.getVehicleType().toString(),
                 v.getFuelType().toString().length() > 11 ? v.getFuelType().toString().substring(0, 11) : v.getFuelType().toString(),
                 statusDisplay,
@@ -1134,9 +1130,9 @@ public class Main {
             
             String feeDisplay;
             if (r.getStatus() == RentalStatus.RETURNED && r.getActualFee() > 0) {
-                feeDisplay = String.format("$%.2f", r.getActualFee());
+                feeDisplay = String.format("RM%.2f", r.getActualFee());
             } else {
-                feeDisplay = String.format("$%.2f", r.getTotalFee());
+                feeDisplay = String.format("RM%.2f", r.getTotalFee());
             }
             
             System.out.printf("│ %-4d │ %-19s │ %-16s │ %-10s │ %-12s │ %-12s │ %-11s │%n",
@@ -1163,7 +1159,7 @@ public class Main {
                 System.out.println("ID: " + r.getId() + ", Customer: " + r.getCustomer().getName() + 
                                  ", Vehicle: " + r.getVehicle().getBrand() + " " + r.getVehicle().getModel() + 
                                  ", Dates: " + r.getStartDate() + " to " + r.getEndDate() + 
-                                 ", Estimated Fee: $" + String.format("%.2f", r.getTotalFee()));
+                                 ", Estimated Fee: RM" + String.format("%.2f", r.getTotalFee()));
             }
         }
     }
@@ -1189,7 +1185,10 @@ public class Main {
 
 
     private static void confirmReturn(RentalSystem system, Scanner scanner) {
-        System.out.println("\n=== Confirm Vehicle Return ===");
+        System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
+        System.out.println("║                  ADMIN: CONFIRM VEHICLE RETURN                   ║");
+        System.out.println("╚══════════════════════════════════════════════════════════════════╝");
+        
         List<Rental> activeRentals = new ArrayList<>();
         for (Rental r : system.getRentals()) {
             if (r.getStatus() == RentalStatus.ACTIVE) {
@@ -1202,21 +1201,185 @@ public class Main {
             return;
         }
         
-        System.out.println("Active rentals:");
+        System.out.println("\nActive rentals:");
+        System.out.println("┌─────┬──────────────────┬─────────────┬─────────────┬─────────────┐");
+        System.out.println("│ ID  │    Customer      │   Vehicle   │ Car Plate   │  End Date   │");
+        System.out.println("├─────┼──────────────────┼─────────────┼─────────────┼─────────────┤");
         for (Rental r : activeRentals) {
-            System.out.println("ID: " + r.getId() + ", Customer: " + r.getCustomer().getName() + 
-                             ", Vehicle: " + r.getVehicle().getBrand() + " " + r.getVehicle().getModel());
+            String customerName = r.getCustomer().getName();
+            if (customerName.length() > 16) {
+                customerName = customerName.substring(0, 13) + "...";
+            }
+            String vehicleName = String.format("%s %s", r.getVehicle().getBrand(), r.getVehicle().getModel());
+            if (vehicleName.length() > 11) {
+                vehicleName = vehicleName.substring(0, 8) + "...";
+            }
+            System.out.printf("│ %-3d │ %-16s │ %-11s │ %-11s │ %-11s │\n",
+                             r.getId(), customerName, vehicleName, r.getVehicle().getCarPlate(), r.getEndDate());
         }
+        System.out.println("└─────┴──────────────────┴─────────────┴─────────────┴─────────────┘");
         
-        System.out.print("Enter rental ID to confirm return: ");
+        System.out.print("\nEnter rental ID to confirm return: ");
         String idStr = scanner.nextLine();
         try {
             int rentalId = Integer.parseInt(idStr);
-            if (system.returnVehicle(rentalId)) {
-                System.out.println("Vehicle return confirmed.");
-            } else {
-                System.out.println("Unable to confirm return.");
+            Rental rental = system.findRentalById(rentalId);
+            
+            if (rental == null || rental.getStatus() != RentalStatus.ACTIVE) {
+                System.out.println("Invalid rental ID or rental not active.");
+                return;
             }
+            
+            // Check if vehicle has been picked up (ticket used)
+            TicketService ticketService = system.getTicketService();
+            Ticket ticket = ticketService.getTicketByRentalId(rentalId);
+            
+            if (ticket == null || !ticket.isUsed()) {
+                System.out.println("\n ERROR: Vehicle has not been picked up yet!");
+                System.out.println("Customer must pick up the vehicle before it can be returned.");
+                if (ticket != null) {
+                    System.out.println("Customer ticket: " + ticket.getTicketId());
+                    System.out.println("Please validate the ticket for pickup first.");
+                }
+                return;
+            }
+            
+            // Enhanced vehicle condition report process
+            System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
+            System.out.println("║                   VEHICLE CONDITION REPORT                       ║");
+            System.out.println("╚══════════════════════════════════════════════════════════════════╝");
+            
+            Vehicle vehicle = rental.getVehicle();
+            System.out.printf("Vehicle: %s %s (Car Plate: %s)\n", 
+                             vehicle.getBrand(), vehicle.getModel(), vehicle.getCarPlate());
+            System.out.printf("Customer: %s\n", rental.getCustomer().getName());
+            
+            System.out.println("\nInspect the vehicle and report any issues or damage:");
+            System.out.print("Any issues to report? (y/n): ");
+            String hasIssues = scanner.nextLine();
+            
+            List<IssueReport> issueReports = new ArrayList<>();
+            if (hasIssues.equalsIgnoreCase("y")) {
+                System.out.println("\nPlease describe each issue (type 'done' when finished):");
+                
+                int issueCounter = 1;
+                while (true) {
+                    System.out.printf("\nIssue #%d description: ", issueCounter);
+                    String description = scanner.nextLine().trim();
+                    
+                    if (description.equalsIgnoreCase("done")) {
+                        break;
+                    }
+                    
+                    if (description.isEmpty()) {
+                        System.out.println("Description cannot be empty. Please try again.");
+                        continue;
+                    }
+                    
+                    // Issue type selection
+                    System.out.println("\nIssue Type:");
+                    System.out.println("1. DAMAGE_REPORT (physical damage)");
+                    System.out.println("2. REPAIR (mechanical/functional issues)");
+                    System.out.println("3. CLEANING (cleanliness issues)");
+                    System.out.print("Choose type (1-3, default: 1): ");
+                    String typeChoice = scanner.nextLine();
+                    
+                    MaintenanceLogType logType = MaintenanceLogType.DAMAGE_REPORT;
+                    switch (typeChoice) {
+                        case "2":
+                            logType = MaintenanceLogType.REPAIR;
+                            break;
+                        case "3":
+                            logType = MaintenanceLogType.CLEANING;
+                            break;
+                        default:
+                            logType = MaintenanceLogType.DAMAGE_REPORT;
+                    }
+                    
+                    // Severity assessment
+                    System.out.println("\nSeverity Assessment:");
+                    System.out.println("Please assess the severity of this issue.");
+                    System.out.println("\nSeverity Level Help:");
+                    System.out.println("1. Type 'help' to see detailed guidance");
+                    System.out.println("2. Enter level directly (1-5)");
+                    
+                    int severity = 3; // default
+                    System.out.print("Enter severity level (1-5) or 'help': ");
+                    String severityInput = scanner.nextLine();
+                    
+                    if (severityInput.equalsIgnoreCase("help")) {
+                        displaySeverityGuidance();
+                        System.out.print("Enter severity level (1-5): ");
+                        severityInput = scanner.nextLine();
+                    }
+                    
+                    try {
+                        severity = Integer.parseInt(severityInput);
+                        if (severity < 1 || severity > 5) {
+                            System.out.println("Invalid severity. Using default level 3.");
+                            severity = 3;
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input. Using default severity level 3.");
+                        severity = 3;
+                    }
+                    
+                    System.out.printf(" Issue #%d recorded: %s (Severity: %d)\n", issueCounter, description, severity);
+                    
+                    issueReports.add(new IssueReport(description, logType, severity));
+                    issueCounter++;
+                }
+            }
+            
+            // Process return with damage reports
+            System.out.println("\n=== Processing Vehicle Return ===");
+            
+            // Submit maintenance logs
+            for (IssueReport issue : issueReports) {
+                system.addMaintenanceLog(vehicle.getId(), issue.logType, issue.description, 
+                                       rental.getCustomer().getName(), issue.severity);
+            }
+            
+            // Execute return (including damage check)
+            List<String> damageDescriptions = new ArrayList<>();
+            for (IssueReport issue : issueReports) {
+                damageDescriptions.add(issue.description);
+            }
+            
+            if (system.returnVehicleWithDamageCheck(rentalId, rental.getCustomer().getName(), damageDescriptions)) {
+                System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
+                System.out.println("║                      RETURN SUMMARY                             ║");
+                System.out.println("╚══════════════════════════════════════════════════════════════════╝");
+                System.out.println(" Vehicle return confirmed successfully.");
+                System.out.printf("Vehicle: %s %s\n", vehicle.getBrand(), vehicle.getModel());
+                System.out.printf("Customer: %s\n", rental.getCustomer().getName());
+                System.out.printf("Final Fee: RM%.2f\n", rental.getActualFee());
+                
+                if (!issueReports.isEmpty()) {
+                    System.out.printf("Issues reported: %d\n", issueReports.size());
+                    
+                    // Check if vehicle was set to maintenance due to critical issues
+                    boolean hasCriticalIssues = issueReports.stream().anyMatch(issue -> issue.severity >= 3);
+                    if (hasCriticalIssues) {
+                        System.out.println(" Vehicle automatically set to UNDER_MAINTENANCE due to reported issues.");
+                        System.out.println(" Maintenance notifications sent to administrators.");
+                    }
+                    
+                    // Display issue summary
+                    System.out.println("\nReported Issues:");
+                    for (int i = 0; i < issueReports.size(); i++) {
+                        IssueReport issue = issueReports.get(i);
+                        System.out.printf("  %d. %s (Severity: %d)\n", i+1, issue.description, issue.severity);
+                    }
+                } else {
+                    System.out.println("No issues reported - vehicle is ready for next rental.");
+                }
+                
+                System.out.println("\nReturn process completed.");
+            } else {
+                System.out.println(" Unable to process vehicle return.");
+            }
+            
         } catch (NumberFormatException e) {
             System.out.println("Invalid rental ID format.");
         }
@@ -1238,7 +1401,7 @@ public class Main {
         system.getVehicles().add(newVehicle);
         
         System.out.println("Vehicle added successfully!");
-        System.out.println("ID: " + id + ", Model: " + model + ", Price: $" + basePrice + "/day");
+        System.out.println("ID: " + id + ", Model: " + model + ", Price: RM" + basePrice + "/day");
     }
 
     private static void viewStatistics(RentalSystem system, Scanner scanner) {
@@ -1308,8 +1471,8 @@ public class Main {
         System.out.printf("║ Completed Rentals:     │ %-38d ║%n", completedRentals);
         System.out.printf("║ Pending Rentals:       │ %-38d ║%n", pendingRentals);
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
-        System.out.printf("║ Total Revenue:         │ $%-38.2f ║%n", totalRevenue);
-        System.out.printf("║ Average Revenue/Rental:│ $%-38.2f ║%n", 
+        System.out.printf("║ Total Revenue:         │ RM%-38.2f ║%n", totalRevenue);
+        System.out.printf("║ Average Revenue/Rental:│ RM%-38.2f ║%n", 
                          completedRentals > 0 ? totalRevenue / completedRentals : 0.0);
         System.out.println("╚══════════════════════════════════════════════════════════════════╝");
         
@@ -1482,7 +1645,7 @@ public class Main {
             System.out.println("├─────┼─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤");
             
             for (Rental rental : pendingRentals) {
-                System.out.printf("│ %-3d │ %-11s │ %-11s │ %-11s │ %-11s │ $%-10.2f │%n",
+                System.out.printf("│ %-3d │ %-11s │ %-11s │ %-11s │ %-11s │ RM%-10.2f │%n",
                     rental.getId(),
                     rental.getUsername() != null ? 
                         (rental.getUsername().length() > 11 ? rental.getUsername().substring(0, 11) : rental.getUsername()) : "N/A",
@@ -1667,7 +1830,7 @@ public class Main {
             double avgRevenue = count > 0 ? revenue / count : 0.0;
             
             String displayCustomer = customer.length() > 22 ? customer.substring(0, 19) + "..." : customer;
-            System.out.printf("║ %-22s │ %-7d │ $%-10.2f │ $%-12.2f  ║%n", 
+            System.out.printf("║ %-22s │ %-7d │ RM%-10.2f │ RM%-12.2f  ║%n", 
                             displayCustomer, count, revenue, avgRevenue);
             
             data.add(Arrays.asList(customer, String.valueOf(count), 
@@ -1732,13 +1895,13 @@ public class Main {
         
         while (true) {
             System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-            System.out.println("║                       TICKET MANAGEMENT                         ║");
+            System.out.println("║                       TICKET MANAGEMENT                          ║");
             System.out.println("╠══════════════════════════════════════════════════════════════════╣");
-            System.out.println("║ 1. View All Tickets                                             ║");
-            System.out.println("║ 2. View Ticket Details                                          ║");
-            System.out.println("║ 3. Validate Ticket                                              ║");
-            System.out.println("║ 4. Ticket Statistics                                            ║");
-            System.out.println("║ 0. Return to Main Menu                                          ║");
+            System.out.println("║ 1. View All Tickets                                              ║");
+            System.out.println("║ 2. View Ticket Details                                           ║");
+            System.out.println("║ 3. Validate Ticket                                               ║");
+            System.out.println("║ 4. Ticket Statistics                                             ║");
+            System.out.println("║ 0. Return to Main Menu                                           ║");
             System.out.println("╚══════════════════════════════════════════════════════════════════╝");
             System.out.print("Choose option: ");
             String choice = scanner.nextLine();
@@ -1765,7 +1928,7 @@ public class Main {
                     scanner.nextLine();
                     break;
                 case "0":
-                    return;
+            return;
                 default:
                     System.out.println("Invalid option. Please try again.");
             }
@@ -1791,6 +1954,49 @@ public class Main {
         
         // Display ticket details for verification
         ticket.displayTicket();
+        
+        // Validate ticket before confirming pickup
+        if (ticket.isUsed()) {
+            System.out.println("\n ERROR: This ticket has already been used!");
+            System.out.println("Pickup cancelled - ticket is no longer valid.");
+            System.out.println("\nPress Enter to continue...");
+            scanner.nextLine();
+            return;
+        }
+        
+        // Validate customer name (exact match, case-insensitive)
+        if (!ticket.getCustomerName().equalsIgnoreCase(customerName.trim())) {
+            System.out.println("\n ERROR: Customer name does not match!");
+            System.out.printf("Expected: %s\n", ticket.getCustomerName());
+            System.out.printf("Provided: %s\n", customerName.trim());
+            System.out.println("Pickup cancelled - name verification failed.");
+            System.out.println("\nPress Enter to continue...");
+            scanner.nextLine();
+            return;
+        }
+        
+        // Validate pickup date (check if it's the rental start date or later)
+        try {
+            LocalDate startDate = LocalDate.parse(ticket.getStartDate());
+            LocalDate today = LocalDate.now();
+            
+            if (today.isBefore(startDate)) {
+                System.out.println("\n ERROR: It's too early for pickup!");
+                System.out.printf("Rental start date: %s\n", startDate);
+                System.out.printf("Today's date: %s\n", today);
+                System.out.println("Please return on or after the rental start date.");
+                System.out.println("Pickup cancelled - date verification failed.");
+                System.out.println("\nPress Enter to continue...");
+                scanner.nextLine();
+                return;
+            }
+        } catch (Exception e) {
+            System.out.println("\n ERROR: Invalid date format in ticket.");
+            System.out.println("Please contact support.");
+            System.out.println("\nPress Enter to continue...");
+            scanner.nextLine();
+            return;
+        }
         
         System.out.print("\nConfirm vehicle pickup? (y/n): ");
         String confirm = scanner.nextLine();
@@ -1819,7 +2025,7 @@ public class Main {
     // 显示票据统计
     private static void displayTicketStatistics(TicketService ticketService) {
         Map<String, Integer> stats = ticketService.getTicketStats();
-        
+
         System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
         System.out.println("║                        TICKET STATISTICS                        ║");
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
@@ -1914,67 +2120,7 @@ public class Main {
         }
     }
 
-    // 查看需要维护的车辆（增强版，包含取消维修状态功能）
-    private static void viewVehiclesNeedingMaintenance(RentalSystem system, Scanner scanner) {
-        List<Vehicle> vehiclesNeedingMaintenance = system.getVehiclesNeedingMaintenance();
 
-        if (vehiclesNeedingMaintenance.isEmpty()) {
-            System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-            System.out.println("║                 NO VEHICLES NEED MAINTENANCE                    ║");
-            System.out.println("║              All vehicles are in good condition!                ║");
-            System.out.println("╚══════════════════════════════════════════════════════════════════╝");
-            return;
-        }
-
-        System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                  VEHICLES NEEDING MAINTENANCE                    ║");
-        System.out.println("╚══════════════════════════════════════════════════════════════════╝");
-        
-        System.out.println("\n┌─────┬─────────────┬─────────────┬─────────────┬─────────────┬─────────┐");
-        System.out.println("│ ID  │    Brand    │    Model    │   License   │   Status    │ Issues  │");
-        System.out.println("├─────┼─────────────┼─────────────┼─────────────┼─────────────┼─────────┤");
-        
-        for (Vehicle v : vehiclesNeedingMaintenance) {
-            List<MaintenanceLog> unresolvedLogs = v.getUnresolvedMaintenanceLogs();
-            String issues = String.valueOf(unresolvedLogs.size());
-            
-            String brand = v.getBrand().length() > 11 ? v.getBrand().substring(0, 8) + "..." : v.getBrand();
-            String model = v.getModel().length() > 11 ? v.getModel().substring(0, 8) + "..." : v.getModel();
-            String license = v.getLicensePlate().length() > 11 ? v.getLicensePlate().substring(0, 8) + "..." : v.getLicensePlate();
-            String status = v.getStatus().toString();
-            if (status.length() > 11) {
-                if (status.equals("UNDER_MAINTENANCE")) status = "MAINTENANCE";
-                else status = status.substring(0, 8) + "...";
-            }
-            
-            System.out.printf("│ %-3d │ %-11s │ %-11s │ %-11s │ %-11s │ %-7s │%n",
-                v.getId(), brand, model, license, status, issues
-            );
-        }
-        
-        System.out.println("└─────┴─────────────┴─────────────┴─────────────┴─────────────┴─────────┘");
-        System.out.println("\nTotal vehicles needing maintenance: " + vehiclesNeedingMaintenance.size());
-        
-        System.out.println("\nOptions:");
-        System.out.println("1. View details of a specific vehicle");
-        System.out.println("2. Cancel maintenance status for a vehicle");
-        System.out.println("0. Back to maintenance menu");
-        System.out.print("Select option: ");
-        
-        String choice = scanner.nextLine();
-        switch (choice) {
-            case "1":
-                viewVehicleMaintenanceDetails(system, scanner, vehiclesNeedingMaintenance);
-                break;
-            case "2":
-                cancelMaintenanceStatus(system, scanner, vehiclesNeedingMaintenance);
-                break;
-            case "0":
-                return;
-            default:
-                System.out.println("Invalid option.");
-        }
-    }
     
     // 查看车辆维护详情
     private static void viewVehicleMaintenanceDetails(RentalSystem system, Scanner scanner, List<Vehicle> vehicles) {
@@ -1998,7 +2144,7 @@ public class Main {
             System.out.printf("║                   VEHICLE %d MAINTENANCE DETAILS                  ║%n", vehicleId);
             System.out.println("╠══════════════════════════════════════════════════════════════════╣");
             System.out.printf("║ Vehicle: %-54s  ║%n", vehicle.getBrand() + " " + vehicle.getModel());
-            System.out.printf("║ License: %-54s  ║%n", vehicle.getLicensePlate());
+            System.out.printf("║ Car Plate: %-54s  ║%n", vehicle.getCarPlate());
             System.out.printf("║ Status:  %-54s  ║%n", vehicle.getStatus());
             System.out.println("╠══════════════════════════════════════════════════════════════════╣");
             System.out.println("║                      UNRESOLVED ISSUES                           ║");
@@ -2045,7 +2191,7 @@ public class Main {
             System.out.printf("║                 CANCEL MAINTENANCE STATUS                       ║%n");
             System.out.println("╠══════════════════════════════════════════════════════════════════╣");
             System.out.printf("║ Vehicle: %-54s ║%n", vehicle.getBrand() + " " + vehicle.getModel());
-            System.out.printf("║ License: %-54s ║%n", vehicle.getLicensePlate());
+            System.out.printf("║ Car Plate: %-54s ║%n", vehicle.getCarPlate());
             System.out.printf("║ Current Status: %-45s ║%n", vehicle.getStatus());
             System.out.println("╠══════════════════════════════════════════════════════════════════╣");
             
@@ -2321,7 +2467,7 @@ public class Main {
             System.out.printf("Reported By: %s\n", log.getReportedBy());
             System.out.printf("Report Date: %s\n", log.getReportDate());
             
-            System.out.print("\nEnter resolution cost: $");
+            System.out.print("\nEnter resolution cost: RM");
             double cost = Double.parseDouble(scanner.nextLine());
             
             VehicleStatus oldStatus = vehicle.getStatus();
@@ -2337,7 +2483,7 @@ public class Main {
                 System.out.println("╚══════════════════════════════════════════════════════════════════╝");
                 
                 System.out.printf(" Maintenance issue resolved successfully!\n");
-                System.out.printf(" Resolution cost: $%.2f\n", cost);
+                System.out.printf(" Resolution cost: RM%.2f\n", cost);
                 System.out.printf(" Remaining issues for Vehicle %d: %d\n", 
                                  vehicle.getId(), unresolvedCountAfter);
                 
@@ -2357,7 +2503,7 @@ public class Main {
                         "Critical maintenance issue resolved:\n\n" +
                         "Vehicle: %s %s (ID: %d)\n" +
                         "Issue: %s\n" +
-                        "Resolution Cost: $%.2f\n" +
+                        "Resolution Cost: RM%.2f\n" +
                         "Resolved By: %s\n\n" +
                         "Vehicle Status: %s",
                         vehicle.getBrand(), vehicle.getModel(), vehicle.getId(),
@@ -2415,7 +2561,7 @@ public class Main {
                 System.out.println("│ ID  │ Type        │ Status      │ Reported By │ Severity    │ Cost        │");
                 System.out.println("├─────┼─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤");
                 for (MaintenanceLog log : history) {
-                    System.out.printf("│ %-3d │ %-11s │ %-11s │ %-11s │ %-11d │ $%-10.2f │%n",
+                    System.out.printf("│ %-3d │ %-11s │ %-11s │ %-11s │ %-11d │ RM%-10.2f │%n",
                         log.getId(),
                         log.getLogType().toString().length() > 11 ? log.getLogType().toString().substring(0, 11) : log.getLogType().toString(),
                         log.getStatus().toString().length() > 11 ? log.getStatus().toString().substring(0, 11) : log.getStatus().toString(),
@@ -2428,7 +2574,7 @@ public class Main {
                 
                 // 显示总维护成本
                 double totalCost = vehicle.getTotalMaintenanceCost();
-                System.out.printf("Total maintenance cost for this vehicle: $%.2f%n", totalCost);
+                System.out.printf("Total maintenance cost for this vehicle: RM%.2f%n", totalCost);
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input format.");
@@ -2685,7 +2831,7 @@ public class Main {
         System.out.println("- Single term: 'toyota' or 'suv'");
         System.out.println("- Multiple terms (AND): 'toyota AND suv'");
         System.out.println("- Alternative terms (OR): 'toyota OR honda'");
-        System.out.println("- Complex: '(toyota OR honda) AND suv'");
+        System.out.println("- Complex: 'toyota OR honda AND car'");
         
         // Parse and execute search
         List<Vehicle> searchResults = performSearch(system.getAvailableVehicles(), query);
@@ -2757,23 +2903,23 @@ public class Main {
      */
     private static void displaySeverityGuidance() {
         System.out.println("\n╔══════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                    SEVERITY LEVEL GUIDANCE                      ║");
+        System.out.println("║                    SEVERITY LEVEL GUIDANCE                       ║");
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
-        System.out.println("║ Level 1: Minor cosmetic issues, no functional impact            ║");
-        System.out.println("║          (Minor scratches, light dirt, no effect on function)   ║");
+        System.out.println("║ Level 1: Minor cosmetic issues, no functional impact             ║");
+        System.out.println("║          (Minor scratches, light dirt, no effect on function)    ║");
         System.out.println("║                                                                  ║");
-        System.out.println("║ Level 2: Minor functional issues, slightly affects experience   ║");
-        System.out.println("║          (Poor AC performance, minor audio issues)              ║");
+        System.out.println("║ Level 2: Minor functional issues, slightly affects experience    ║");
+        System.out.println("║          (Poor AC performance, minor audio issues)               ║");
         System.out.println("║                                                                  ║");
-        System.out.println("║ Level 3: Moderate issues, noticeable impact on usage           ║");
-        System.out.println("║          (Lighting faults, window/door problems, seat issues)   ║");
+        System.out.println("║ Level 3: Moderate issues, noticeable impact on usage             ║");
+        System.out.println("║          (Lighting faults, window/door problems, seat issues)    ║");
         System.out.println("║                                                                  ║");
-        System.out.println("║ Level 4: Serious issues, significantly affects safety/function  ║");
-        System.out.println("║          (Soft brakes, engine noise, steering vibration)        ║");
+        System.out.println("║ Level 4: Serious issues, significantly affects safety/function   ║");
+        System.out.println("║          (Soft brakes, engine noise, steering vibration)         ║");
         System.out.println("║          - AUTO NOTIFIES ADMIN                                   ║");
         System.out.println("║                                                                  ║");
-        System.out.println("║ Level 5: Critical safety issues, vehicle should not be used     ║");
-        System.out.println("║          (Brake failure, engine fault, safety hazards)          ║");
+        System.out.println("║ Level 5: Critical safety issues, vehicle should not be used      ║");
+        System.out.println("║          (Brake failure, engine fault, safety hazards)           ║");
         System.out.println("║          - AUTO NOTIFIES ADMIN                                   ║");
         System.out.println("╚══════════════════════════════════════════════════════════════════╝");
         System.out.println("Press Enter to continue...");
@@ -2907,7 +3053,7 @@ public class Main {
             System.out.printf("Customer already has an active rental for this vehicle:\n");
             System.out.printf("  Current rental period: %s to %s\n",
                               existingRental.getStartDate(), existingRental.getEndDate());
-            System.out.printf("  Total fee: $%.2f\n", existingRental.getTotalFee());
+            System.out.printf("  Total fee: RM%.2f\n", existingRental.getTotalFee());
 
             System.out.print("\nDo you want to extend this existing rental instead? (y/n): ");
             String extendChoice = scanner.nextLine();
@@ -2951,7 +3097,7 @@ public class Main {
                         System.out.println("\n=== OFFLINE RENTAL EXTENSION SUCCESSFUL ===\n");
                         System.out.printf("Updated Rental ID: %d\n", updatedRental.getId());
                         System.out.printf("Extended until: %s\n", updatedRental.getEndDate());
-                        System.out.printf("Updated total fee: $%.2f\n", updatedRental.getTotalFee());
+                        System.out.printf("Updated total fee: RM%.2f\n", updatedRental.getTotalFee());
                         System.out.println("New ticket generated.");
 
                         // Display new ticket
@@ -2983,10 +3129,10 @@ public class Main {
         // Show vehicle details and schedule
         System.out.println("\n=== Vehicle Details ===\n");
         System.out.println("Vehicle: " + selectedVehicle.getBrand() + " " + selectedVehicle.getModel());
-        System.out.println("License Plate: " + selectedVehicle.getLicensePlate());
+        System.out.println("Car Plate: " + selectedVehicle.getCarPlate());
         System.out.println("Type: " + selectedVehicle.getVehicleType());
         System.out.println("Fuel Type: " + selectedVehicle.getFuelType());
-        System.out.printf("Base Price: $%.2f/day\n", selectedVehicle.getBasePrice());
+        System.out.printf("Base Price: RM%.2f/day\n", selectedVehicle.getBasePrice());
 
         List<String> unavailablePeriods = system.getVehicleUnavailablePeriods(vehicleId);
         if (!unavailablePeriods.isEmpty()) {
@@ -3015,7 +3161,17 @@ public class Main {
             }
         }
 
-        System.out.print("Enter rental duration (days): ");
+        // Show available discounts before asking for rental days
+        if (selectedVehicle.getLongTermDiscounts() != null && !selectedVehicle.getLongTermDiscounts().isEmpty()) {
+            System.out.println("\n=== Available Discounts ===\n");
+            System.out.println("Long-term rental discounts:");
+            for (Map.Entry<Integer, Double> entry : selectedVehicle.getLongTermDiscounts().entrySet()) {
+                System.out.printf("- %d+ days: %.1f%% off\n", entry.getKey(), entry.getValue() * 100);
+            }
+            System.out.println("\nChoose your rental duration to see applicable discounts!");
+        }
+
+        System.out.print("\nEnter rental duration (days): ");
         int rentalDays;
         try {
             rentalDays = Integer.parseInt(scanner.nextLine());
@@ -3052,7 +3208,7 @@ public class Main {
         double insuranceCost = baseRentalCost * insuranceRate;
 
         System.out.printf("Insurance rate: %.1f%%\n", insuranceRate * 100);
-        System.out.printf("Estimated insurance cost: $%.2f\n", insuranceCost);
+        System.out.printf("Estimated insurance cost: RM%.2f\n", insuranceCost);
         System.out.print("Include insurance? (y/n): ");
         boolean insurance = scanner.nextLine().equalsIgnoreCase("y");
 
@@ -3085,7 +3241,7 @@ public class Main {
         System.out.println("Vehicle: " + selectedVehicle.getBrand() + " " + selectedVehicle.getModel());
         System.out.println("Period: " + startDate + " to " + endDate + " (" + rentalDays + " days)");
         System.out.println("Insurance: " + (insurance ? "Yes" : "No"));
-        System.out.printf("Total Fee: $%.2f\n", totalFee);
+        System.out.printf("Total Fee: RM%.2f\n", totalFee);
 
         System.out.print("\nConfirm offline booking? (y/n): ");
         if (!scanner.nextLine().equalsIgnoreCase("y")) {

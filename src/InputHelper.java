@@ -2,9 +2,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
-/**
- * 辅助类，用于处理和验证用户通过控制台的输入。
- */
 public class InputHelper {
 
     private final Scanner scanner;

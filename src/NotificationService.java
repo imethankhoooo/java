@@ -50,7 +50,7 @@ public class NotificationService {
             "Your rental booking has been confirmed!\r\n\r\n" +
             "Vehicle: %s\r\n" +
             "Rental Period: %s to %s\r\n" +
-            "Total Fee: $%.2f\r\n\r\n" +
+            "Total Fee: RM%.2f\r\n\r\n" +
             "Please bring a valid driver's license when picking up the vehicle.",
             vehicleModel, startDate, endDate, totalFee
         );

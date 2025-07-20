@@ -270,7 +270,7 @@ public class EmailService {
             "Your rental booking has been confirmed!\n" +
             "Vehicle: %s\n" +
             "Rental Period: %s to %s\n" +
-            "Total Fee: $%.2f\n" +
+            "Total Fee: RM%.2f\n" +
             "Please bring a valid driver's license and payment method when picking up the vehicle.\n" +
             "Thank you for choosing our rental service!\n" +
             "Best regards,\n" +

@@ -9,7 +9,7 @@ public class Vehicle {
     private int id;
     private String brand;
     private String model;
-    private String licensePlate;    // License plate number
+    private String carPlate;    // Car plate number
     private VehicleType vehicleType; // Vehicle type
     private FuelType fuelType;      // Fuel type
     private VehicleStatus status;
@@ -30,13 +30,13 @@ public class Vehicle {
     }
     
     // New complete constructor
-    public Vehicle(int id, String brand, String model, String licensePlate, VehicleType vehicleType, 
+    public Vehicle(int id, String brand, String model, String carPlate, VehicleType vehicleType, 
                    FuelType fuelType, VehicleStatus status, double insuranceRate, double basePrice, 
                    Map<Integer, Double> longTermDiscounts) {
         this.id = id;
         this.brand = brand;
         this.model = model;
-        this.licensePlate = licensePlate;
+        this.carPlate = carPlate;
         this.vehicleType = vehicleType;
         this.fuelType = fuelType;
         this.status = status;
@@ -72,8 +72,8 @@ public class Vehicle {
     }
 
     // New field getters and setters
-    public String getLicensePlate() { return licensePlate; }
-    public void setLicensePlate(String licensePlate) { this.licensePlate = licensePlate; }
+    public String getCarPlate() { return carPlate; }
+    public void setCarPlate(String carPlate) { this.carPlate = carPlate; }
 
     public VehicleType getVehicleType() { return vehicleType; }
     public void setVehicleType(VehicleType vehicleType) { this.vehicleType = vehicleType; }
@@ -241,7 +241,7 @@ public class Vehicle {
 
     @Override
     public String toString() {
-        return String.format("ID: %d, %s %s (%s), License: %s, Type: %s, Fuel: %s, Price: $%.2f/day, Insurance: %.1f%%", 
-                           id, brand, model, status, licensePlate, vehicleType, fuelType, basePrice, insuranceRate * 100);
+        return String.format("ID: %d, %s %s (%s), Car Plate: %s, Type: %s, Fuel: %s, Price: RM%.2f/day, Insurance: %.1f%%", 
+                           id, brand, model, status, carPlate, vehicleType, fuelType, basePrice, insuranceRate * 100);
     }
 } 

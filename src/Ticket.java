@@ -12,7 +12,7 @@ public class Ticket {
     private String customerName;
     private String customerContact;
     private String vehicleInfo;
-    private String licensePlate;
+    private String carPlate;
     private String startDate;
     private String endDate;
     private double totalFee;
@@ -29,7 +29,7 @@ public class Ticket {
         this.customerName = rental.getCustomer().getName();
         this.customerContact = rental.getCustomer().getContact();
         this.vehicleInfo = rental.getVehicle().getBrand() + " " + rental.getVehicle().getModel();
-        this.licensePlate = rental.getVehicle().getLicensePlate();
+        this.carPlate = rental.getVehicle().getCarPlate();
         this.startDate = rental.getStartDate().toString();
         this.endDate = rental.getEndDate().toString();
         this.totalFee = rental.getTotalFee();
@@ -55,7 +55,7 @@ public class Ticket {
         this.customerName = rental.getCustomer().getName();
         this.customerContact = rental.getCustomer().getContact();
         this.vehicleInfo = rental.getVehicle().getBrand() + " " + rental.getVehicle().getModel();
-        this.licensePlate = rental.getVehicle().getLicensePlate();
+        this.carPlate = rental.getVehicle().getCarPlate();
         this.startDate = rental.getStartDate().toString();
         this.endDate = rental.getEndDate().toString();
         this.totalFee = rental.getTotalFee();
@@ -78,10 +78,10 @@ public class Ticket {
         System.out.printf("║ Contact: %-54s  ║%n", customerContact);
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
         System.out.printf("║ Vehicle: %-55s ║%n", vehicleInfo);
-        System.out.printf("║ License Plate: %-49s ║%n", licensePlate);
+        System.out.printf("║ Car Plate: %-47s ║%n", carPlate);
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
         System.out.printf("║ Rental Period: %-49s ║%n", startDate + " to " + endDate);
-        System.out.printf("║ Total Fee: $%-52.2f ║%n", totalFee);
+        System.out.printf("║ Total Fee: RM%-52.2f ║%n", totalFee);
         System.out.printf("║ Insurance: %-53s ║%n", insuranceIncluded ? "Included" : "Not included");
         System.out.println("╠══════════════════════════════════════════════════════════════════╣");
         System.out.printf("║ Pickup Location: %-47s ║%n", pickupLocation);
@@ -98,8 +98,8 @@ public class Ticket {
     
     // Compact display for lists
     public void displayCompact() {
-        System.out.printf("Ticket: %s | Rental: %d | Vehicle: %s (%s) | Period: %s to %s | Fee: $%.2f%n",
-                ticketId, rentalId, vehicleInfo, licensePlate, startDate, endDate, totalFee);
+        System.out.printf("Ticket: %s | Rental: %d | Vehicle: %s (%s) | Period: %s to %s | Fee: RM%.2f%n",
+                ticketId, rentalId, vehicleInfo, carPlate, startDate, endDate, totalFee);
     }
     
     // Mark ticket as used
@@ -113,7 +113,7 @@ public class Ticket {
     public String getCustomerName() { return customerName; }
     public String getCustomerContact() { return customerContact; }
     public String getVehicleInfo() { return vehicleInfo; }
-    public String getLicensePlate() { return licensePlate; }
+    public String getCarPlate() { return carPlate; }
     public String getStartDate() { return startDate; }
     public String getEndDate() { return endDate; }
     public double getTotalFee() { return totalFee; }

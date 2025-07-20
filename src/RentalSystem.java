@@ -226,8 +226,8 @@ public class RentalSystem {
             double basePrice = (priceStr != null) ? Double.parseDouble(priceStr) : 50.0;
             
             // 解析新增的车辆属性
-            String licensePlate = extractJsonValue(json, "licensePlate");
-            if (licensePlate == null) licensePlate = "UNKNOWN";
+            String carPlate = extractJsonValue(json, "carPlate");
+            if (carPlate == null) carPlate = "UNKNOWN";
             
             String vehicleTypeStr = extractJsonValue(json, "vehicleType");
             VehicleType vehicleType = VehicleType.CAR; // 默认值
@@ -269,7 +269,7 @@ public class RentalSystem {
             }
             
             // 使用新的构造函数创建Vehicle对象
-            return new Vehicle(id, brand, model, licensePlate, vehicleType, fuelType, status, insuranceRate, basePrice, discounts);
+            return new Vehicle(id, brand, model, carPlate, vehicleType, fuelType, status, insuranceRate, basePrice, discounts);
         } catch (Exception e) {
             System.out.println("Failed to parse vehicle object: " + e.getMessage());
         }
@@ -439,7 +439,7 @@ public class RentalSystem {
             json.append("      \"id\": ").append(vehicle.getId()).append(",\n");
             json.append("      \"brand\": \"").append(vehicle.getBrand()).append("\",\n");
             json.append("      \"model\": \"").append(vehicle.getModel()).append("\",\n");
-            json.append("      \"licensePlate\": \"").append(vehicle.getLicensePlate()).append("\",\n");
+            json.append("      \"carPlate\": \"").append(vehicle.getCarPlate()).append("\",\n");
             json.append("      \"vehicleType\": \"").append(vehicle.getVehicleType()).append("\",\n");
             json.append("      \"fuelType\": \"").append(vehicle.getFuelType()).append("\",\n");
             json.append("      \"status\": \"").append(vehicle.getStatus()).append("\",\n");
@@ -875,12 +875,12 @@ public class RentalSystem {
     /**
      * 搜索车辆 - 按车牌号
      */
-    public List<Vehicle> searchVehiclesByLicensePlate(String licensePlate) {
+    public List<Vehicle> searchVehiclesByCarPlate(String carPlate) {
         List<Vehicle> results = new ArrayList<>();
-        String searchTerm = licensePlate.toLowerCase().trim();
+        String searchTerm = carPlate.toLowerCase().trim();
         
         for (Vehicle vehicle : vehicles) {
-            if (vehicle.getLicensePlate().toLowerCase().contains(searchTerm)) {
+            if (vehicle.getCarPlate().toLowerCase().contains(searchTerm)) {
                 results.add(vehicle);
             }
         }
@@ -948,7 +948,7 @@ public class RentalSystem {
     /**
      * 综合搜索 - 可以同时按多个条件搜索
      */
-    public List<Vehicle> searchVehicles(String licensePlate, String brand, String model, 
+    public List<Vehicle> searchVehicles(String carPlate, String brand, String model, 
                                       VehicleType vehicleType, FuelType fuelType, boolean onlyAvailable) {
         List<Vehicle> results = new ArrayList<>();
         
@@ -961,8 +961,8 @@ public class RentalSystem {
             }
             
             // 检查车牌号
-            if (licensePlate != null && !licensePlate.trim().isEmpty()) {
-                if (!vehicle.getLicensePlate().toLowerCase().contains(licensePlate.toLowerCase().trim())) {
+            if (carPlate != null && !carPlate.trim().isEmpty()) {
+                if (!vehicle.getCarPlate().toLowerCase().contains(carPlate.toLowerCase().trim())) {
                     matches = false;
                 }
             }
@@ -1017,7 +1017,7 @@ public class RentalSystem {
             }
             
             // 在车牌、品牌、型号中搜索
-            if (vehicle.getLicensePlate().toLowerCase().contains(searchTerm) ||
+            if (vehicle.getCarPlate().toLowerCase().contains(searchTerm) ||
                 vehicle.getBrand().toLowerCase().contains(searchTerm) ||
                 vehicle.getModel().toLowerCase().contains(searchTerm)) {
                 results.add(vehicle);
@@ -1116,24 +1116,24 @@ public class RentalSystem {
             .mapToDouble(Rental::getTotalFee)
             .sum();
         
-        report.append("  已完成租赁收入: $").append(String.format("%.2f", totalRevenue)).append("\n");
-        report.append("  待完成租赁收入: $").append(String.format("%.2f", pendingRevenue)).append("\n");
-        report.append("  总计: $").append(String.format("%.2f", totalRevenue + pendingRevenue)).append("\n");
+        report.append("  Lease income completed: RM").append(String.format("%.2f", totalRevenue)).append("\n");
+        report.append("  Lease income to be completed: RM").append(String.format("%.2f", pendingRevenue)).append("\n");
+        report.append("  Total: RM").append(String.format("%.2f", totalRevenue + pendingRevenue)).append("\n");
         
         // 逾期租赁
-        report.append("\n逾期租赁:\n");
+        report.append("\nOverdue rentals:\n");
         List<Rental> overdueRentals = rentals.stream()
             .filter(r -> r.getStatus() == RentalStatus.ACTIVE && r.isOverdue())
             .collect(java.util.stream.Collectors.toList());
         
         if (overdueRentals.isEmpty()) {
-            report.append("  无逾期租赁\n");
+            report.append("  No overdue leases\n");
         } else {
             for (Rental rental : overdueRentals) {
-                report.append("  租赁ID: ").append(rental.getId())
-                      .append(", 用户: ").append(rental.getUsername())
-                      .append(", 车辆: ").append(rental.getVehicle().getModel())
-                      .append(", 到期日: ").append(rental.getEndDate())
+                report.append("  Rental ID: ").append(rental.getId())
+                      .append(", Username: ").append(rental.getUsername())
+                      .append(", Vehicle: ").append(rental.getVehicle().getModel())
+                      .append(", End Date: ").append(rental.getEndDate())
                       .append("\n");
             }
         }
@@ -1144,43 +1144,43 @@ public class RentalSystem {
     // 导出数据（增强版）
     public boolean exportData(String filename) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) {
-            writer.println("=== 租赁系统数据导出 ===");
-            writer.println("导出时间: " + LocalDate.now());
+            writer.println("=== Leasing system data export ===");
+            writer.println("Export time: " + LocalDate.now());
             writer.println();
             
             // 导出车辆数据
-            writer.println("=== 车辆数据 ===");
+            writer.println("=== Vehicle data ===");
             for (Vehicle vehicle : vehicles) {
                 writer.println("ID: " + vehicle.getId() + 
-                             ", 型号: " + vehicle.getModel() + 
-                             ", 状态: " + vehicle.getStatus() + 
-                             ", 价格: $" + vehicle.getBasePrice() + "/天");
+                             ",Modal: " + vehicle.getModel() + 
+                             ", Status: " + vehicle.getStatus() + 
+                             ", Price: RM" + vehicle.getBasePrice() + "/day");
             }
             writer.println();
             
             // 导出租赁数据
-            writer.println("=== 租赁数据 ===");
+            writer.println("=== Leasing data ===");
             for (Rental rental : rentals) {
                 writer.println("ID: " + rental.getId() + 
-                             ", 用户: " + rental.getUsername() + 
-                             ", 车辆: " + rental.getVehicle().getModel() + 
-                             ", 状态: " + rental.getStatus() + 
-                             ", 开始日期: " + rental.getStartDate() + 
-                             ", 结束日期: " + rental.getEndDate() + 
-                             ", 费用: $" + rental.getTotalFee());
+                             ", Username: " + rental.getUsername() + 
+                             ", Vehicle: " + rental.getVehicle().getModel() + 
+                             ", Status: " + rental.getStatus() + 
+                             ", Start Date: " + rental.getStartDate() + 
+                             ", End Date: " + rental.getEndDate() + 
+                             ", Fee: RM" + rental.getTotalFee());
             }
             writer.println();
             
             // 导出用户数据
-            writer.println("=== 用户数据 ===");
+            writer.println("=== User data ===");
             for (Account account : accounts) {
-                writer.println("用户名: " + account.getUsername() + 
-                             ", 角色: " + account.getRole());
+                writer.println("Username: " + account.getUsername() + 
+                             ", Role: " + account.getRole());
             }
             
             return true;
         } catch (IOException e) {
-            System.err.println("导出数据失败: " + e.getMessage());
+            System.err.println("Export data failed: " + e.getMessage());
             return false;
         }
     }
@@ -1218,16 +1218,16 @@ public class RentalSystem {
                                                    int severity, String reportedBy) {
         String subject = String.format("CRITICAL MAINTENANCE ALERT - Vehicle %d", vehicle.getId());
         String content = String.format(
-            "⚠️ HIGH PRIORITY MAINTENANCE ISSUE ⚠️\n\n" +
+            " HIGH PRIORITY MAINTENANCE ISSUE \n\n" +
             "Vehicle: %s %s (ID: %d)\n" +
-            "License Plate: %s\n" +
+            "Car Plate: %s\n" +
             "Severity Level: %d/5\n" +
             "Reported By: %s\n" +
             "Issue Description: %s\n\n" +
             "This issue requires immediate attention due to its high severity level.\n" +
             "Please address this maintenance issue as soon as possible.",
             vehicle.getBrand(), vehicle.getModel(), vehicle.getId(),
-            vehicle.getLicensePlate(), severity, reportedBy, description
+            vehicle.getCarPlate(), severity, reportedBy, description
         );
         
         // 发送给所有管理员
@@ -1389,6 +1389,9 @@ public class RentalSystem {
             }
             
             saveRentals("rentals.json");
+            
+            // 同步车辆状态以确保一致性
+            syncVehicleStatusWithRentals();
             saveVehicles("vehicles.json"); // 保存车辆状态变化
             return true;
         }
@@ -1497,8 +1500,8 @@ public class RentalSystem {
             Arrays.asList("Active Rentals", String.valueOf(activeRentals)),
             Arrays.asList("Completed Rentals", String.valueOf(completedRentals)),
             Arrays.asList("Pending Rentals", String.valueOf(pendingRentals)),
-            Arrays.asList("Total Revenue", String.format("$%.2f", totalRevenue)),
-            Arrays.asList("Average Revenue/Rental", String.format("$%.2f", (completedRentals > 0 ? totalRevenue / completedRentals : 0.0)))
+            Arrays.asList("Total Revenue", String.format("RM%.2f", totalRevenue)),
+            Arrays.asList("Average Revenue/Rental", String.format("RM%.2f", (completedRentals > 0 ? totalRevenue / completedRentals : 0.0)))
         );
         
         stats.put("exportHeaders", headers);
@@ -1645,6 +1648,18 @@ public class RentalSystem {
      }
 
     /**
+     * 同步租赁记录中的车辆引用（确保指向最新的车辆对象）
+     */
+    private void syncRentalVehicleReferences() {
+        for (Rental rental : rentals) {
+            Vehicle updatedVehicle = findVehicleById(rental.getVehicle().getId());
+            if (updatedVehicle != null) {
+                rental.setVehicle(updatedVehicle);
+            }
+        }
+    }
+
+    /**
      * 保存车辆数据到JSON文件
      */
     public void saveVehicles(String filename) {
@@ -1669,7 +1684,7 @@ public class RentalSystem {
             json.append("    \"id\": ").append(vehicle.getId()).append(",\n");
             json.append("    \"brand\": \"").append(vehicle.getBrand()).append("\",\n");
             json.append("    \"model\": \"").append(vehicle.getModel()).append("\",\n");
-            json.append("    \"licensePlate\": \"").append(vehicle.getLicensePlate()).append("\",\n");
+            json.append("    \"carPlate\": \"").append(vehicle.getCarPlate()).append("\",\n");
             json.append("    \"vehicleType\": \"").append(vehicle.getVehicleType()).append("\",\n");
             json.append("    \"fuelType\": \"").append(vehicle.getFuelType()).append("\",\n");
             json.append("    \"status\": \"").append(vehicle.getStatus()).append("\",\n");
@@ -1890,5 +1905,41 @@ public class RentalSystem {
         saveVehicles("vehicles.json");
         
         return true;
+    }
+
+    /**
+     * 同步车辆状态与租赁状态，确保一致性
+     */
+    public void syncVehicleStatusWithRentals() {
+        List<Rental> activeRentals = getActiveRentals();
+        
+        for (Vehicle vehicle : vehicles) {
+            // 保护特殊状态：UNDER_MAINTENANCE 和 OUT_OF_SERVICE 不被覆盖
+            if (vehicle.getStatus() == VehicleStatus.UNDER_MAINTENANCE || 
+                vehicle.getStatus() == VehicleStatus.OUT_OF_SERVICE) {
+                continue; // 跳过这些车辆，保持其状态不变
+            }
+            
+            boolean hasActiveRental = false;
+            
+            // 检查是否有该车辆的活跃租赁
+            for (Rental rental : activeRentals) {
+                if (rental.getVehicle().getId() == vehicle.getId()) {
+                    hasActiveRental = true;
+                    break;
+                }
+            }
+            
+            // 如果没有活跃租赁但状态是RESERVED或RENTED，则设为AVAILABLE
+            if (!hasActiveRental && 
+                (vehicle.getStatus() == VehicleStatus.RESERVED || vehicle.getStatus() == VehicleStatus.RENTED)) {
+                vehicle.setStatus(VehicleStatus.AVAILABLE);
+            }
+            
+            // 如果有活跃租赁但状态是AVAILABLE，则设为RESERVED
+            if (hasActiveRental && vehicle.getStatus() == VehicleStatus.AVAILABLE) {
+                vehicle.setStatus(VehicleStatus.RESERVED);
+            }
+        }
     }
 }

@@ -80,7 +80,7 @@ public class Rental {
 
     @Override
     public String toString() {
-        return String.format("Rental ID: %d, Customer: %s, Vehicle: %s %s, Period: %s to %s, Status: %s, Fee: $%.2f",
+        return String.format("Rental ID: %d, Customer: %s, Vehicle: %s %s, Period: %s to %s, Status: %s, Fee: RM%.2f",
                            id, customer.getName(), vehicle.getBrand(), vehicle.getModel(), 
                            startDate, endDate, status, totalFee);
     }
